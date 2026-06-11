@@ -10,6 +10,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="icon" href="./icons/icon-192.png" type="image/png">
+<meta name="description" content="Incolla un testo e scopri anagrammi, acrostici, frasi nascoste e parole oracolo. Oppure nascondi tu un messaggio. Gratis, offline, nessun dato raccolto.">
+<meta property="og:title" content="L'Enigmista — Scova messaggi nascosti">
+<meta property="og:description" content="Incolla un testo e scopri anagrammi, acrostici, frasi nascoste e parole oracolo. Oppure nascondi tu un messaggio. Gratis e offline.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pezzaliapp.github.io/enigmista/">
+<meta property="og:image" content="https://pezzaliapp.github.io/enigmista/icons/icon-512.png">
+<meta property="og:locale" content="it_IT">
+<meta name="twitter:card" content="summary">
 <style>
   :root{
     --paper:#E9EDF1; --panel:#FFFFFF; --ink:#16243B; --muted:#5C6B7A;
@@ -110,7 +118,8 @@
 
   <div class="tabs">
     <button class="tab active" id="tabDecifra">Decifra</button>
-    <button class="tab" id="tabScrittoio">Scrittoio segreto</button>
+    <button class="tab" id="tabScrittoio">Scrittoio</button>
+    <button class="tab" id="tabAnagrammi">Anagrammi</button>
   </div>
 
   <div id="modeDecifra">
@@ -122,12 +131,21 @@
     <input type="text" id="phrase" placeholder="es. tesoro">
     <div class="row">
       <button class="primary" id="go">Decifra il testo</button>
-      <button class="ghost" id="sample">Articolo di prova</button>
+    </div>
+    <div class="row">
+      <button class="seg" id="sample0">Es: articolo</button>
+      <button class="seg" id="sample1">Es: poesia</button>
+      <button class="seg" id="sample2">Es: lettera</button>
     </div>
     <p class="meta" id="dictinfo">Preparo il dizionario…</p>
   </div>
 
   <div id="results"></div>
+
+  <details class="card" style="margin-top:18px">
+    <summary class="meta" style="cursor:pointer; font-weight:700">Perché trovo quasi sempre qualcosa?</summary>
+    <p class="meta" style="margin-top:8px">Perché in un testo di qualche centinaio di lettere le combinazioni possibili sono milioni: è quasi certo che alcune formino parole di senso compiuto. È lo stesso motivo per cui i "codici segreti" scoperti in libri famosi non dimostrano nulla: il caso, da solo, produce messaggi. Se trovi "sogno" leggendo una lettera ogni cinque, non è un presagio — è statistica. Un messaggio nascosto vero si riconosce perché è troppo preciso per essere casuale: come un acrostico le cui iniziali compongono esattamente una frase di senso compiuto.</p>
+  </details>
   </div><!-- /modeDecifra -->
 
   <div id="modeScrittoio" hidden>
@@ -135,10 +153,6 @@
       <label for="secret">Messaggio da nascondere</label>
       <input type="text" id="secret" placeholder="es. la storia di sophia">
       <p class="meta" id="secretInfo"></p>
-      <div class="row">
-        <button class="seg active" id="modeGuide">Scrivo io, guidami</button>
-        <button class="seg" id="modeAI">Riscrivi tu il mio testo</button>
-      </div>
     </div>
 
     <div class="card" id="guidePane">
@@ -149,22 +163,23 @@
       <textarea id="guideTxt" placeholder="Scrivi qui: ogni frase deve iniziare con la lettera indicata. Le spunte si aggiornano mentre scrivi."></textarea>
       <div class="row"><button class="ghost" id="copyGuide">Copia il testo</button></div>
     </div>
-
-    <div class="card" id="aiPane" hidden>
-      <label for="aiSrc">Testo originale da riscrivere</label>
-      <textarea id="aiSrc" placeholder="Incolla qui il racconto o l'articolo: lo riscrivo nascondendo il messaggio nelle iniziali delle frasi, mantenendo il senso."></textarea>
-      <div class="row"><button class="primary" id="aiGo">Nascondi il messaggio nel testo</button></div>
-      <details style="margin-top:10px">
-        <summary class="meta" style="cursor:pointer">Impostazioni AI (per la versione web/PWA)</summary>
-        <p class="meta" style="margin:8px 0">Nella versione dentro Claude la riscrittura funziona da sola. Sul web serve una chiave API Anthropic: resta solo in memoria finché la pagina è aperta, non viene salvata né inviata altrove.</p>
-        <input type="text" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
-      </details>
-      <p class="meta" id="aiStatus"></p>
-      <div id="aiOut"></div>
-    </div>
   </div>
 
-  <footer>Dizionario: ~60.000 parole italiane da una lista open source gratuita, incorporata nell'app (funziona anche offline). Trovare qualcosa non significa che qualcuno l'abbia nascosto davvero.</footer>
+  <div id="modeAnagrammi" hidden>
+    <div class="card">
+      <label for="anaSrc">Nome o frase da anagrammare</label>
+      <input type="text" id="anaSrc" placeholder="es. enigmista (da 4 a 18 lettere)">
+      <div class="row"><button class="primary" id="anaGo">Trova gli anagrammi</button></div>
+      <p class="meta" id="anaInfo"></p>
+    </div>
+    <div id="anaOut"></div>
+  </div>
+
+  <footer>
+    <p>🔒 Nessun dato lascia il tuo dispositivo: tutta l'analisi avviene nel browser, l'app funziona anche offline.</p>
+    <p style="margin-top:6px">Dizionario: ~60.000 parole italiane da una lista open source gratuita, incorporata nell'app. Trovare qualcosa non significa che qualcuno l'abbia nascosto davvero.</p>
+    <p style="margin-top:6px">L'Enigmista v1.1 — PezzaliAPP — licenza MIT</p>
+  </footer>
 </div>
 
 <script>
@@ -176,7 +191,7 @@ function buildIndex(){
   DICT_SET = new Set(words);
   ANAG = Object.create(null);
   for (const w of words){
-    if (w.length >= 4 && w.length <= 10){
+    if (w.length >= 3 && w.length <= 10){
       const k = w.split("").sort().join("");
       (ANAG[k] = ANAG[k] || []).push(w);
     }
@@ -324,8 +339,10 @@ function render(text, phrase){
           : '<p class="empty" style="margin-top:6px">Niente di leggibile qui.</p>'}</div>`;
     }).join(""));
 
+  window.__target = null;
   if (phrase.trim()){
     const t = findTargetPhrase(text, phrase);
+    window.__target = { phrase: phrase.trim(), ok: !!(t && t.found), span: t && t.found ? t.span : 0 };
     if (t && t.found){
       html += section("Frase nascosta", 1,
         `Le lettere di "${esc(phrase)}" compaiono tutte in questo frammento di ${t.span} lettere:`,
@@ -346,14 +363,35 @@ function render(text, phrase){
       }</div></div>`
     : '<p class="empty">Il caso oggi tace: nessuna parola di 6+ lettere emersa.</p>');
 
+  html += '<div class="row" style="margin-top:18px"><button class="ghost" id="shareBtn">Condividi i risultati</button></div>';
   document.getElementById("results").innerHTML = html;
+
+  let firstAcro = "";
+  for (const r of acr){ if (r.found.length){ firstAcro = r.found[0].word; break; } }
+  const parts = ["\u{1F50D} L'Enigmista ha esaminato il mio testo:"];
+  parts.push("\u2022 Anagrammi: " + ana.length + (ana.length ? " (es. " + norm(ana[0].word) + " \u2192 " + ana[0].anagrams[0] + ")" : ""));
+  parts.push("\u2022 Acrostici: " + acrCount + (firstAcro ? ' (es. "' + firstAcro + '")' : ""));
+  if (window.__target) parts.push('\u2022 Frase nascosta "' + window.__target.phrase + '": ' + (window.__target.ok ? "trovata in " + window.__target.span + " lettere" : "non trovata"));
+  parts.push("\u2022 Parole oracolo: " + ora.length + (ora.length ? " (es. " + ora[0].word + ")" : ""));
+  parts.push("Prova anche tu: https://pezzaliapp.github.io/enigmista/");
+  const summary = parts.join("\n");
+  document.getElementById("shareBtn").addEventListener("click", async e => {
+    if (navigator.share){ try { await navigator.share({ text: summary }); return; } catch(_){} }
+    copyText(summary, e.target);
+  });
 }
 
-const SAMPLE = "Forse nessuno se n'era accorto, ma il mercato delle carte antiche è in piena ripresa. Una mostra dedicata ai documenti ritrovati apre ancora una volta i battenti nel centro storico. Gli esperti parlano di un interesse senza precedenti per la storia locale. Grandi collezionisti sono arrivati da tutta Europa per l'occasione. Il pubblico potrà visitare la sala fino alla fine del mese.";
-
-document.getElementById("sample").addEventListener("click", () => {
-  document.getElementById("txt").value = SAMPLE;
-  document.getElementById("phrase").value = "tesoro";
+const SAMPLES = [
+{ text: "Forse nessuno se n'era accorto, ma il mercato delle carte antiche è in piena ripresa. Una mostra dedicata ai documenti ritrovati apre ancora una volta i battenti nel centro storico. Gli esperti parlano di un interesse senza precedenti per la storia locale. Grandi collezionisti sono arrivati da tutta Europa per l'occasione. Il pubblico potrà visitare la sala fino alla fine del mese.", phrase: "tesoro" },
+{ text: "Sotto un cielo di carta respira la sera.\nOgni parola nasconde una porta socchiusa.\nGuarda meglio: le righe non sono che vele.\nNel silenzio le lettere cambiano posto.\nOra leggi dall'alto, e troverai il sogno.", phrase: "" },
+{ text: "Amici carissimi, vi scrivo da una casa che non conoscete. Il tempo qui scorre lento e le giornate si somigliano tutte. Una cosa sola mi consola: pensare che leggerete queste righe con attenzione. Tra le mie parole, chi sa guardare troverà più di quanto sembri. Ognuno di voi capirà, prima o poi, quello che non posso dire apertamente.", phrase: "" }
+];
+SAMPLES.forEach((s, i) => {
+  document.getElementById("sample" + i).addEventListener("click", () => {
+    document.getElementById("txt").value = s.text;
+    document.getElementById("phrase").value = s.phrase;
+    document.getElementById("results").innerHTML = "";
+  });
 });
 document.getElementById("go").addEventListener("click", () => {
   const text = document.getElementById("txt").value;
@@ -367,21 +405,14 @@ document.getElementById("go").addEventListener("click", () => {
 // ================= SCRITTOIO SEGRETO =================
 const $ = id => document.getElementById(id);
 
-$("tabDecifra").addEventListener("click", () => switchTab(true));
-$("tabScrittoio").addEventListener("click", () => switchTab(false));
-function switchTab(dec){
-  $("tabDecifra").classList.toggle("active", dec);
-  $("tabScrittoio").classList.toggle("active", !dec);
-  $("modeDecifra").hidden = !dec;
-  $("modeScrittoio").hidden = dec;
-}
-$("modeGuide").addEventListener("click", () => switchPane(true));
-$("modeAI").addEventListener("click", () => switchPane(false));
-function switchPane(guide){
-  $("modeGuide").classList.toggle("active", guide);
-  $("modeAI").classList.toggle("active", !guide);
-  $("guidePane").hidden = !guide;
-  $("aiPane").hidden = guide;
+const TABS = [["tabDecifra","modeDecifra"],["tabScrittoio","modeScrittoio"],["tabAnagrammi","modeAnagrammi"]];
+for (const [tb, md] of TABS){
+  $(tb).addEventListener("click", () => {
+    for (const [tb2, md2] of TABS){
+      $(tb2).classList.toggle("active", tb2 === tb);
+      $(md2).hidden = (md2 !== md);
+    }
+  });
 }
 
 const splitSentences = t => t.split(/(?<=[.!?…])\s+/).map(s=>s.trim()).filter(Boolean);
@@ -430,104 +461,54 @@ async function copyText(text, btn){
 }
 $("copyGuide").addEventListener("click", e => copyText($("guideTxt").value, e.target));
 
-// ---- Riscrittura automatica con AI ----
-function verifyRewrite(text, L){
-  const sents = splitSentences(text);
-  const errors = [];
-  for (let i = 0; i < L.length; i++){
-    const ini = i < sents.length ? norm(sents[i]).charAt(0) : "";
-    if (ini !== L[i]) errors.push('frase ' + (i+1) + ': deve iniziare con "' + L[i].toUpperCase() + '", trovato "' + (ini ? ini.toUpperCase() : "frase mancante") + '"');
-  }
-  if (sents.length > L.length) errors.push("ci sono " + (sents.length - L.length) + " frasi in più del necessario");
-  return { ok: errors.length === 0, sents, errors };
-}
-
-function buildPrompt(src, L, prevErrors){
-  let p = "Riscrivi in italiano il testo qui sotto mantenendone contenuto, senso e tono, ma ristrutturandolo in ESATTAMENTE " + L.length + " frasi.\n" +
-    "La frase numero i deve INIZIARE con la lettera indicata (una lettera accentata vale come la sua base: \u00c8 vale come E):\n" +
-    L.map((c,i)=>(i+1)+":"+c.toUpperCase()).join("  ") + "\n" +
-    'Lette in ordine, le iniziali delle frasi devono comporre: "' + L.join("").toUpperCase() + '".\n' +
-    "Suggerimento per lettere difficili (H, Q...): puoi usare domande retoriche (\"Ha mai...?\"), nomi propri o esclamazioni.\n" +
-    "Regole: ogni frase termina con . ! o ?; nessun titolo, premessa, elenco o spiegazione; rispondi SOLO con il testo riscritto, in un unico paragrafo.";
-  if (prevErrors) p += "\nATTENZIONE: nel tentativo precedente c'erano questi errori, correggili tutti: " + prevErrors + ".";
-  p += "\n\nTESTO:\n" + src;
-  return p;
-}
-
-async function callClaude(prompt){
-  const headers = { "Content-Type": "application/json" };
-  const keyEl = $("apiKey");
-  const key = keyEl ? keyEl.value.trim() : "";
-  if (key){
-    headers["x-api-key"] = key;
-    headers["anthropic-version"] = "2023-06-01";
-    headers["anthropic-dangerous-direct-browser-access"] = "true";
-  }
-  let r;
-  try {
-    r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-  } catch(e){
-    throw new Error(key ? "connessione all'API non riuscita" : "qui serve una chiave API: apri \"Impostazioni AI\" qui sotto (nella versione dentro Claude funziona da sola)");
-  }
-  const data = await r.json().catch(()=>null);
-  if (!r.ok){
-    const apiMsg = data && data.error && data.error.message ? data.error.message : "stato " + r.status;
-    throw new Error(key ? apiMsg : "qui serve una chiave API: apri \"Impostazioni AI\" qui sotto (nella versione dentro Claude funziona da sola)");
-  }
-  if (!data || !data.content) throw new Error("risposta vuota dal modello");
-  return data.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim();
-}
-
-function renderRewriteResult(out, L, ok){
-  const res = verifyRewrite(out, L);
-  const status = L.map((c,i)=> i < res.sents.length && norm(res.sents[i]).charAt(0) === c ? "ok" : "bad");
-  const body = res.sents.map(s => '<span class="ini">' + esc(s.charAt(0)) + '</span>' + esc(s.slice(1))).join(" ");
-  $("aiOut").innerHTML = '<div class="item">' + trackHTML(L, status) +
-    '<div class="outbox">' + body + '</div>' +
-    '<div class="row"><button class="ghost" id="copyAI">Copia il testo</button></div></div>';
-  $("copyAI").addEventListener("click", e => copyText(res.sents.join(" "), e.target));
-}
-
-$("aiGo").addEventListener("click", async () => {
-  const L = msgLetters();
-  const src = $("aiSrc").value.trim();
-  const st = $("aiStatus");
-  $("aiOut").innerHTML = "";
-  if (!L.length){ st.textContent = "Scrivi prima il messaggio da nascondere (campo in alto)."; return; }
-  if (L.length > 40){ st.textContent = "Messaggio troppo lungo (" + L.length + " lettere): accorcialo sotto le 40 per un risultato naturale."; return; }
-  if (!src){ st.textContent = "Incolla il testo da riscrivere."; return; }
-  if (src.length > 2500){ st.textContent = "Testo troppo lungo: tienilo sotto i 2500 caratteri, oppure accorcia il messaggio."; return; }
-  const btn = $("aiGo");
-  btn.disabled = true;
-  try {
-    st.textContent = "Riscrivo il testo nascondendo il messaggio…";
-    let out = await callClaude(buildPrompt(src, L));
-    let res = verifyRewrite(out, L);
-    if (!res.ok){
-      st.textContent = "Prima stesura imperfetta (" + res.errors.length + " punti da sistemare), correggo…";
-      out = await callClaude(buildPrompt(src, L, res.errors.join("; ")));
-      res = verifyRewrite(out, L);
-    }
-    st.textContent = res.ok
-      ? "✔ Verificato: le iniziali delle " + L.length + " frasi compongono il messaggio."
-      : "⚠ Non tutte le iniziali combaciano (tessere rosse). Puoi ritoccare a mano le frasi segnate o riprovare.";
-    renderRewriteResult(out, L);
-  } catch(err){
-    st.textContent = "Errore durante la riscrittura: " + (err && err.message ? err.message : "riprova tra poco") + ".";
-  } finally {
-    btn.disabled = false;
-  }
-});
-
 updateSecretInfo();
+
+// ================= ANAGRAMMI DI FRASE =================
+function countsOf(s){ const c = Object.create(null); for (const ch of s) c[ch] = (c[ch]||0)+1; return c; }
+function fitsIn(wc, pc){ for (const k in wc) if (!pc[k] || wc[k] > pc[k]) return false; return true; }
+function subtractC(pc, wc){ const r = Object.create(null); for (const k in pc){ const v = pc[k] - (wc[k]||0); if (v > 0) r[k] = v; } return r; }
+function keyOf(c){ let s = ""; for (const k of Object.keys(c).sort()) s += k.repeat(c[k]); return s; }
+
+function fullAnagrams(phrase){
+  const letters = norm(phrase);
+  if (letters.length < 4) return { err: "Servono almeno 4 lettere." };
+  if (letters.length > 18) return { err: "Massimo 18 lettere: oltre, le combinazioni esplodono." };
+  const pc = countsOf(letters);
+  const exact = (ANAG[keyOf(pc)] || []).filter(w => w !== letters);
+  const cands = [];
+  for (const w of DICT_SET){
+    if (w.length < 3 || w.length > letters.length - 3) continue;
+    const wc = countsOf(w);
+    if (fitsIn(wc, pc)) cands.push({ w, wc });
+  }
+  const seen = new Set(), pairs = [];
+  for (const { w, wc } of cands){
+    if (w.length * 2 < letters.length) continue;
+    const rest = keyOf(subtractC(pc, wc));
+    for (const w2 of (ANAG[rest] || [])){
+      const pair = [w, w2].sort().join("|");
+      if (!seen.has(pair)){ seen.add(pair); pairs.push(w + " " + w2); }
+      if (pairs.length >= 40) return { letters, exact, pairs, truncated: true };
+    }
+  }
+  return { letters, exact, pairs, truncated: false };
+}
+
+$("anaGo").addEventListener("click", () => {
+  const src = $("anaSrc").value;
+  const r = fullAnagrams(src);
+  if (r.err){ $("anaInfo").textContent = r.err; $("anaOut").innerHTML = ""; return; }
+  const tot = r.exact.length + r.pairs.length;
+  $("anaInfo").textContent = tot
+    ? "Trovate " + tot + " combinazioni con le " + r.letters.length + " lettere di \"" + src.trim() + "\"" + (r.truncated ? " (mostro le prime 40)." : ".")
+    : "Nessun anagramma di senso compiuto con queste lettere: prova ad aggiungere o togliere una parola.";
+  let html = "";
+  if (r.exact.length) html += '<div class="section"><span class="stamp">Parola singola <span class="n">' + r.exact.length + '</span></span><div class="item"><div class="chips">' +
+    r.exact.map(w => '<span class="chip">' + esc(w) + '</span>').join("") + '</div></div></div>';
+  if (r.pairs.length) html += '<div class="section"><span class="stamp">Due parole <span class="n">' + r.pairs.length + '</span></span><div class="item"><div class="chips">' +
+    r.pairs.map(p => '<span class="chip">' + esc(p) + '</span>').join("") + '</div></div></div>';
+  $("anaOut").innerHTML = html;
+});
 
 // costruisce gli indici senza bloccare il primo render della pagina
 setTimeout(buildIndex, 0);
