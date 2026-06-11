@@ -38,7 +38,13 @@
       letter-spacing:-.01em }
   h1 .circ{ position:relative; display:inline-block }
   h1 .circ::after{ content:""; position:absolute; inset:-6px -10px; border:2.5px solid var(--red);
-      border-radius:48% 52% 55% 45% / 60% 45% 55% 40%; transform:rotate(-2deg); pointer-events:none }
+      border-radius:48% 52% 55% 45% / 60% 45% 55% 40%; transform:rotate(-2deg); pointer-events:none;
+      opacity:0; transition:opacity .5s ease .15s }
+  h1.drawn .circ::after{ opacity:1 }
+  .byline{ font-family:var(--mono); font-size:13px; color:var(--muted); letter-spacing:.12em; margin-top:8px;
+      opacity:0; transition:opacity .6s ease .3s }
+  .byline strong{ color:var(--ink) }
+  header.ready .byline{ opacity:1 }
   .sub{ color:var(--muted); font-size:14px; margin-top:12px; max-width:50ch }
 
   .card{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px;
@@ -112,7 +118,8 @@
 <div class="wrap">
   <header>
     <div class="eyebrow">Rubrica di decifrazione</div>
-    <h1>L'Enigmi<span class="circ">sta</span></h1>
+    <h1 id="title"><span id="t1">L'Enigmi</span><span class="circ" id="t2">sta</span></h1>
+    <div class="byline">by <strong>PezzaliAPP</strong></div>
     <p class="sub">Incolla un articolo o un testo qualsiasi: cerco anagrammi, acrostici, frasi nascoste e parole "oracolo". Quasi ogni testo nasconde qualcosa — è statistica, non magia.</p>
   </header>
 
@@ -512,6 +519,27 @@ $("anaGo").addEventListener("click", () => {
 
 // costruisce gli indici senza bloccare il primo render della pagina
 setTimeout(buildIndex, 0);
+
+// Animazione del titolo: le lettere si "decifrano" all'apertura
+(function(){
+  const FINAL = "L'Enigmista";
+  const GLYPHS = "ABCDEFGHILMNOPQRSTUVZ*#@%&?";
+  const t1 = document.getElementById("t1"), t2 = document.getElementById("t2");
+  const h = document.getElementById("title"), head = document.querySelector("header");
+  const done = () => { t1.textContent = FINAL.slice(0,8); t2.textContent = FINAL.slice(8); h.classList.add("drawn"); head.classList.add("ready"); };
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches){ done(); return; }
+  let frame = 0; const TOTAL = 24;
+  const iv = setInterval(() => {
+    frame++;
+    let s = "";
+    for (let i = 0; i < FINAL.length; i++){
+      s += (i < (frame / (TOTAL * 0.8)) * FINAL.length) ? FINAL[i] : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+    }
+    t1.textContent = s.slice(0, 8);
+    t2.textContent = s.slice(8);
+    if (frame >= TOTAL){ clearInterval(iv); done(); }
+  }, 45);
+})();
 
 // PWA: service worker per il funzionamento offline (ignorato dove non supportato)
 if ("serviceWorker" in navigator){
