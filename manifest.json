@@ -1,0 +1,17 @@
+{
+  "name": "L'Enigmista — Scova messaggi nascosti",
+  "short_name": "Enigmista",
+  "description": "Incolla un testo: trova anagrammi, acrostici, frasi nascoste e parole oracolo. Oppure nascondi tu un messaggio in un testo, a mano o con l'AI.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E9EDF1",
+  "theme_color": "#16243B",
+  "lang": "it",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
