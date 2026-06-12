@@ -41,7 +41,7 @@ dopo il primo caricamento. Il service worker conserva l'app in cache per l'uso o
 ```
 index.html      app completa (dizionario incluso)
 manifest.json   manifest PWA
-sw.js           service worker (cache offline, v1.1)
+sw.js           service worker (cache offline, v1.2)
 icons/          icone 192/512 + apple-touch-icon
 LICENSE         MIT
 ```

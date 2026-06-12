@@ -1,4 +1,4 @@
-const CACHE = "enigmista-v1.1";
+const CACHE = "enigmista-v1.2";
 const SHELL = [
   "./",
   "./index.html",
